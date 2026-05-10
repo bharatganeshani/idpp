@@ -67,7 +67,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const modeTabs = document.querySelectorAll('.mode-tab');
   const textSection = document.getElementById('textModeSection');
   const fileSection = document.getElementById('fileModeSection');
-  let currentMode = 'text'; // 'text' | 'file'
+  const imageSection = document.getElementById('imageModeSection');
+  let currentMode = 'text'; // 'text' | 'file' | 'image'
 
   modeTabs.forEach(tab => {
     tab.addEventListener('click', () => {
@@ -75,14 +76,19 @@ document.addEventListener("DOMContentLoaded", () => {
       tab.classList.add('active');
       currentMode = tab.dataset.mode;
 
+      textSection.classList.add('hidden');
+      fileSection.classList.add('hidden');
+      imageSection.classList.add('hidden');
+
       if (currentMode === 'text') {
         textSection.classList.remove('hidden');
-        fileSection.classList.add('hidden');
         document.querySelector('#aiClassifyButton .btn-text').textContent = 'Analyze Book';
-      } else {
-        textSection.classList.add('hidden');
+      } else if (currentMode === 'file') {
         fileSection.classList.remove('hidden');
         document.querySelector('#aiClassifyButton .btn-text').textContent = 'Upload & Analyze';
+      } else if (currentMode === 'image') {
+        imageSection.classList.remove('hidden');
+        document.querySelector('#aiClassifyButton .btn-text').textContent = 'Analyze Cover';
       }
       initLucide();
     });
@@ -140,6 +146,58 @@ document.addEventListener("DOMContentLoaded", () => {
     showToast(`File attached: ${file.name}`, 'success');
   }
 
+  // ── Image Upload Handlers ──
+  const imageUploadZone = document.getElementById('imageUploadZone');
+  const imageInput = document.getElementById('aiBookImage');
+  const imageSelectedInfo = document.getElementById('imageSelectedInfo');
+  const imageNameDisplay = document.getElementById('imageNameDisplay');
+  const imageUploadContent = document.getElementById('imageUploadContent');
+  const clearImageBtn = document.getElementById('clearImageBtn');
+
+  imageUploadZone.addEventListener('dragover', e => {
+    e.preventDefault();
+    imageUploadZone.classList.add('drag-over');
+  });
+
+  ['dragleave', 'drop'].forEach(evt => {
+    imageUploadZone.addEventListener(evt, e => {
+      e.preventDefault();
+      imageUploadZone.classList.remove('drag-over');
+    });
+  });
+
+  imageUploadZone.addEventListener('drop', e => {
+    const file = e.dataTransfer.files[0];
+    if (file) handleImageSelect(file);
+  });
+
+  imageInput.addEventListener('change', e => {
+    if (e.target.files[0]) handleImageSelect(e.target.files[0]);
+  });
+
+  clearImageBtn.addEventListener('click', () => {
+    imageInput.value = '';
+    imageSelectedInfo.classList.add('hidden');
+    imageUploadContent.classList.remove('hidden');
+  });
+
+  function handleImageSelect(file) {
+    const validExts = ['.png', '.jpg', '.jpeg', '.webp'];
+    if (!validExts.some(ext => file.name.toLowerCase().endsWith(ext))) {
+      showToast('Invalid image type. Use PNG, JPG, or WEBP.', 'error');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      showToast('Image too large. Maximum size is 10 MB.', 'error');
+      return;
+    }
+    imageNameDisplay.textContent = file.name;
+    imageUploadContent.classList.add('hidden');
+    imageSelectedInfo.classList.remove('hidden');
+    initLucide();
+    showToast(`Image attached: ${file.name}`, 'success');
+  }
+
   // ── Form Submission ──
   document.getElementById('aiClassificationForm').addEventListener('submit', async e => {
     e.preventDefault();
@@ -167,7 +225,7 @@ document.addEventListener("DOMContentLoaded", () => {
         setLoadingState(false, 'Analyze Book');
       }
 
-    } else {
+    } else if (currentMode === 'file') {
       // File mode
       const file = fileInput.files[0];
       const title = document.getElementById('aiBookTitleFile').value.trim();
@@ -189,6 +247,28 @@ document.addEventListener("DOMContentLoaded", () => {
         resetEmptyState();
       } finally {
         setLoadingState(false, 'Upload & Analyze');
+      }
+    } else if (currentMode === 'image') {
+      // Image mode
+      const file = imageInput.files[0];
+
+      if (!file) {
+        showToast('Please select an image to upload.', 'error');
+        return;
+      }
+
+      setLoadingState(true, 'Analyzing cover...');
+      try {
+        const result = await uploadImageToAPI(file);
+        const displayTitle = 'Cover Analysis: ' + file.name;
+        displayResults(result.classification, displayTitle);
+        saveToHistory(displayTitle, result.classification);
+        showToast('Cover analyzed!', 'success');
+      } catch (err) {
+        showToast(err.message, 'error');
+        resetEmptyState();
+      } finally {
+        setLoadingState(false, 'Analyze Cover');
       }
     }
   });
@@ -245,6 +325,16 @@ document.addEventListener("DOMContentLoaded", () => {
     formData.append('file', file);
     if (title) formData.append('title', title);
     const res = await fetch('http://127.0.0.1:5000/upload-and-classify', {
+      method: 'POST',
+      body: formData
+    });
+    return handleApiResponse(res);
+  }
+
+  async function uploadImageToAPI(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch('http://127.0.0.1:5000/analyze-image', {
       method: 'POST',
       body: formData
     });
@@ -403,6 +493,9 @@ document.addEventListener("DOMContentLoaded", () => {
 (function () {
   let allBooks = [];
   let activeGenre = 'All';
+  let currentPage = 1;
+  const itemsPerPage = 50;
+  let currentFilteredBooks = [];
 
   const GENRE_COLORS = {
     'Fantasy': '#818cf8', 'Science Fiction': '#06b6d4', 'Thriller': '#ef4444',
@@ -423,27 +516,72 @@ document.addEventListener("DOMContentLoaded", () => {
     const bar = document.getElementById('booksGenreBar');
     if (!bar) return;
     const all = ['All', ...genres];
-    bar.innerHTML = all.map(g => `
-      <button class="genre-filter-btn ${g === 'All' ? 'active' : ''}" data-genre="${g}"
-        style="border-color:${g === 'All' ? '#818cf8' : genreColor(g) + '66'};
-               ${g === activeGenre ? 'background:' + genreColor(g) + '33;color:' + genreColor(g) : ''}">
-        ${g}
-      </button>`).join('');
-    bar.querySelectorAll('.genre-filter-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        activeGenre = btn.dataset.genre;
-        bar.querySelectorAll('.genre-filter-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
+    
+    // Create a searchable dropdown structure
+    bar.innerHTML = `
+      <div class="genre-selector-container" style="position: relative; width: 100%;">
+        <div class="genre-search-wrapper" style="position: relative;">
+          <i data-lucide="filter" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 18px; color: var(--text-muted);"></i>
+          <input type="text" id="genreSearchInput" class="books-search" placeholder="Search and select a genre..." style="padding-left: 42px; cursor: pointer;" autocomplete="off">
+          <i data-lucide="chevron-down" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); width: 18px; color: var(--text-muted); pointer-events: none;"></i>
+        </div>
+        <div id="genreDropdownList" class="genre-dropdown-list hidden">
+          ${all.map(g => `<div class="genre-option ${g === 'All' ? 'active' : ''}" data-genre="${g}">${g}</div>`).join('')}
+        </div>
+      </div>
+    `;
+
+    const searchInput = document.getElementById('genreSearchInput');
+    const dropdownList = document.getElementById('genreDropdownList');
+    
+    // Initial value
+    searchInput.value = activeGenre === 'All' ? '' : activeGenre;
+    if (activeGenre === 'All') searchInput.placeholder = 'All Genres (Search...)';
+
+    // Toggle dropdown
+    searchInput.addEventListener('focus', () => {
+      dropdownList.classList.remove('hidden');
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!bar.contains(e.target)) {
+        dropdownList.classList.add('hidden');
+        searchInput.value = activeGenre === 'All' ? '' : activeGenre;
+      }
+    });
+
+    // Filter genres
+    searchInput.addEventListener('input', (e) => {
+      const term = e.target.value.toLowerCase();
+      dropdownList.classList.remove('hidden');
+      dropdownList.querySelectorAll('.genre-option').forEach(opt => {
+        const text = opt.textContent.toLowerCase();
+        opt.style.display = text.includes(term) ? 'block' : 'none';
+      });
+    });
+
+    // Select genre
+    dropdownList.querySelectorAll('.genre-option').forEach(opt => {
+      opt.addEventListener('click', () => {
+        activeGenre = opt.dataset.genre;
+        dropdownList.querySelectorAll('.genre-option').forEach(o => o.classList.remove('active'));
+        opt.classList.add('active');
+        searchInput.value = activeGenre === 'All' ? '' : activeGenre;
+        searchInput.placeholder = activeGenre === 'All' ? 'All Genres (Search...)' : 'Search genres...';
+        dropdownList.classList.add('hidden');
         filterAndRender();
       });
     });
+    
+    initLucide();
   }
 
-  function renderBooks(books) {
+  function renderBooks(books, totalCount) {
     const grid = document.getElementById('booksGrid');
     const count = document.getElementById('booksCount');
     if (!grid) return;
-    if (count) count.textContent = `${books.length} book${books.length !== 1 ? 's' : ''}`;
+    if (count) count.textContent = `${totalCount} book${totalCount !== 1 ? 's' : ''}`;
     if (!books.length) {
       grid.innerHTML = '<p style="color:var(--text-muted);text-align:center;grid-column:1/-1;padding:40px 0;">No books found.</p>';
       return;
@@ -479,7 +617,61 @@ document.addEventListener("DOMContentLoaded", () => {
       b.title.toLowerCase().includes(search) ||
       b.author.toLowerCase().includes(search) ||
       b.description.toLowerCase().includes(search));
-    renderBooks(filtered);
+    
+    currentFilteredBooks = filtered;
+    currentPage = 1;
+    renderBooksPage();
+  }
+
+  function renderBooksPage() {
+    const totalPages = Math.ceil(currentFilteredBooks.length / itemsPerPage) || 1;
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+
+    const startIdx = (currentPage - 1) * itemsPerPage;
+    const endIdx = startIdx + itemsPerPage;
+    const booksToRender = currentFilteredBooks.slice(startIdx, endIdx);
+
+    renderBooks(booksToRender, currentFilteredBooks.length);
+    renderPaginationControls(totalPages);
+  }
+
+  function renderPaginationControls(totalPages) {
+    let paginationContainer = document.getElementById('booksPagination');
+    if (!paginationContainer) {
+      paginationContainer = document.createElement('div');
+      paginationContainer.id = 'booksPagination';
+      paginationContainer.className = 'books-pagination';
+      const explorerContainer = document.getElementById('booksExplorer').querySelector('.container');
+      explorerContainer.appendChild(paginationContainer);
+    }
+
+    if (currentFilteredBooks.length === 0) {
+        paginationContainer.innerHTML = '';
+        return;
+    }
+
+    paginationContainer.innerHTML = `
+      <button class="btn btn-outline" id="prevPageBtn" ${currentPage === 1 ? 'disabled' : ''}>Previous</button>
+      <span class="pagination-info">Page ${currentPage} of ${totalPages}</span>
+      <button class="btn btn-outline" id="nextPageBtn" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>
+    `;
+
+    document.getElementById('prevPageBtn')?.addEventListener('click', () => {
+      if (currentPage > 1) {
+        currentPage--;
+        renderBooksPage();
+        document.getElementById('booksExplorer').scrollIntoView({behavior: 'smooth', block: 'start'});
+      }
+    });
+
+    document.getElementById('nextPageBtn')?.addEventListener('click', () => {
+      if (currentPage < totalPages) {
+        currentPage++;
+        renderBooksPage();
+        document.getElementById('booksExplorer').scrollIntoView({behavior: 'smooth', block: 'start'});
+      }
+    });
   }
 
   function escHtmlBook(s) {
@@ -495,6 +687,7 @@ document.addEventListener("DOMContentLoaded", () => {
       textTab.classList.add('active');
       document.getElementById('textModeSection')?.classList.remove('hidden');
       document.getElementById('fileModeSection')?.classList.add('hidden');
+      document.getElementById('imageModeSection')?.classList.add('hidden');
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
     showToastBook('Book loaded! Click "Analyze Book" to classify.', 'success');
@@ -520,14 +713,16 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="books-header">
           <div>
             <h2 class="books-title">📚 Books Explorer</h2>
-            <p class="books-subtitle">Browse our dataset of <strong>100 books</strong> across <strong>30 genres</strong>. Click any book to auto-fill the classifier.</p>
+            <p class="books-subtitle">Browse our dataset of <strong>600+ books</strong> across <strong>100+ genres</strong>. Click any book to auto-fill the classifier.</p>
           </div>
-          <span id="booksCount" class="books-count-badge">100 books</span>
+          <span id="booksCount" class="books-count-badge">600+ books</span>
         </div>
-        <div class="books-search-wrap">
-          <input id="booksSearch" class="books-search" type="text" placeholder="🔍 Search books, authors, or descriptions...">
+        <div class="books-filters-layout" style="display: flex; gap: 16px; margin-bottom: 28px; flex-wrap: wrap;">
+          <div class="books-search-wrap" style="flex: 2; min-width: 280px; margin-bottom: 0;">
+            <input id="booksSearch" class="books-search" type="text" placeholder="🔍 Search books, authors, or descriptions...">
+          </div>
+          <div id="booksGenreBar" class="books-genre-bar" style="flex: 1; min-width: 240px; margin-bottom: 0;"></div>
         </div>
-        <div id="booksGenreBar" class="books-genre-bar"></div>
         <div id="booksGrid" class="books-grid"></div>
       </div>`;
     document.body.insertBefore(section, document.querySelector('.toast-container'));
@@ -545,9 +740,10 @@ document.addEventListener("DOMContentLoaded", () => {
       .books-search-wrap{margin-bottom:20px;}
       .books-search{width:100%;padding:13px 18px;border-radius:14px;border:1.5px solid var(--border-color);background:var(--card-bg);color:var(--text-main);font-size:0.95rem;font-family:inherit;outline:none;transition:all 0.25s;}
       .books-search:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-glow);}
-      .books-genre-bar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:28px;}
-      .genre-filter-btn{padding:6px 14px;border-radius:99px;border:1.5px solid var(--border-color);background:var(--card-bg);color:var(--text-muted);font-size:0.82rem;font-weight:600;cursor:pointer;transition:all 0.2s;}
-      .genre-filter-btn:hover,.genre-filter-btn.active{transform:translateY(-1px);}
+      .genre-dropdown-list{position:absolute;top:100%;left:0;right:0;margin-top:8px;background:var(--bg-secondary);border:1.5px solid var(--border-color);border-radius:14px;max-height:300px;overflow-y:auto;z-index:100;box-shadow:0 10px 40px rgba(0,0,0,0.6);padding:8px;}
+      .genre-option{padding:10px 16px;border-radius:8px;cursor:pointer;font-size:0.9rem;color:var(--text-main);transition:all 0.2s;}
+      .genre-option:hover{background:rgba(99,102,241,0.1);color:var(--primary);}
+      .genre-option.active{background:var(--primary);color:#fff;font-weight:600;}
       .books-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px;}
       .book-card{background:var(--card-bg);border:1px solid var(--border-color);border-radius:16px;overflow:hidden;transition:all 0.25s;display:flex;flex-direction:column;}
       .book-card:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(0,0,0,0.2);}
@@ -561,6 +757,8 @@ document.addEventListener("DOMContentLoaded", () => {
       .book-meta{display:flex;gap:12px;font-size:0.78rem;color:var(--text-muted);margin-bottom:12px;}
       .book-classify-btn{width:100%;padding:8px;border-radius:10px;border:1.5px solid;background:transparent;font-size:0.83rem;font-weight:600;cursor:pointer;transition:all 0.2s;}
       .book-classify-btn:hover{opacity:0.8;transform:translateY(-1px);}
+      .books-pagination{display:flex;justify-content:center;align-items:center;gap:20px;margin-top:32px;padding-bottom:12px;}
+      .pagination-info{font-weight:600;color:var(--text-main);font-size:0.95rem;}
     `;
     document.head.appendChild(s);
   }
@@ -572,7 +770,9 @@ document.addEventListener("DOMContentLoaded", () => {
       addBooksStyles();
       injectBooksSection();
       renderGenreFilters(data.genres || []);
-      renderBooks(allBooks);
+      
+      currentFilteredBooks = allBooks;
+      renderBooksPage();
     })
     .catch(() => console.warn('books_data.json not found — Books Explorer disabled.'));
 })();

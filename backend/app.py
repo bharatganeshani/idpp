@@ -13,6 +13,9 @@ from flask import Flask, jsonify, request
 from werkzeug.security import generate_password_hash, check_password_hash
 from PyPDF2 import PdfReader
 import requests
+import base64
+import io
+from PIL import Image
 
 # Load environment variables
 load_dotenv()
@@ -179,6 +182,72 @@ def _classify_with_nvidia(book_title: str, book_content: str) -> dict[str, Any]:
     response_payload = response.json()
     response_text = _extract_message_content(response_payload)
     return _parse_model_json(response_text)
+
+
+def _classify_image_with_nvidia(image_b64: str, mime_type: str) -> dict[str, Any]:
+    if not OPENAI_API_KEY:
+        raise ValueError("Missing api_key in backend/.env")
+
+    headers = {
+        "Authorization": f"Bearer {OPENAI_API_KEY}",
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+    }
+    
+    prompt = """You are an expert book classifier. Analyze the provided image of a book cover or front page.
+First, identify the title and author if visible. Then, provide a comprehensive analysis of the book based on its cover, title, and any visible text.
+
+Please provide a detailed analysis in JSON format with the following fields:
+1. primary_category: The main category (e.g., Technology, Science, History, Business, Philosophy, Fiction, Self-Help)
+2. secondary_categories: List of other relevant categories
+3. themes: List of main themes likely present based on the cover
+4. subject_keywords: List of key subjects/topics
+5. target_audience: Who would benefit from this book
+6. difficulty_level: Beginner, Intermediate, Advanced, or Mixed
+7. content_type: Academic, Practical Guide, Reference, Narrative, etc.
+8. key_insights: 3-5 expected main insights or takeaways
+9. reading_time_estimate: Estimated reading time in hours
+10. related_topics: Other books or topics this would relate to
+11. summary: 2-3 sentence summary/guess of what the book is about based on the cover
+12. confidence_score: Your confidence in this classification (0-1)
+
+Respond ONLY with valid JSON, no markdown or additional text."""
+
+    payload = {
+        "model": "meta/llama-3.2-11b-vision-instruct",
+        "messages": [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:{mime_type};base64,{image_b64}"
+                        }
+                    }
+                ]
+            }
+        ],
+        "max_tokens": 1500,
+        "temperature": 0.7,
+        "top_p": 1.0,
+        "stream": False
+    }
+
+    response = requests.post(
+        OPENAI_API_ENDPOINT,
+        headers=headers,
+        json=payload,
+        timeout=90,
+    )
+    if not response.ok:
+        raise RuntimeError(f"Upstream API error: {_extract_api_error(response)}")
+
+    response_payload = response.json()
+    response_text = _extract_message_content(response_payload)
+    return _parse_model_json(response_text)
+
 
 
 # ── SQLite thread-safe connection helper ──────────────────────────────────────
@@ -445,6 +514,76 @@ def upload_and_classify() -> Any:
             "error": f"Server error: {str(e)}",
             "type": "server_error"
         }), 500
+
+
+@app.route("/analyze-image", methods=["POST", "OPTIONS"])
+def analyze_image() -> Any:
+    """Upload an image of a book cover and classify it"""
+    if request.method == "OPTIONS":
+        return ("", 204)
+
+    try:
+        if "file" not in request.files:
+            return jsonify({"error": "No image provided"}), 400
+            
+        file = request.files["file"]
+        
+        if file.filename == "":
+            return jsonify({"error": "No image selected"}), 400
+            
+        if not file.filename.lower().endswith((".png", ".jpg", ".jpeg", ".webp")):
+            return jsonify({"error": "Unsupported image format. Please use PNG, JPG, JPEG, or WEBP."}), 400
+            
+        mime_type = file.mimetype
+        if not mime_type:
+            mime_type = "image/jpeg"
+            
+        file_content = file.read()
+        if not file_content:
+            return jsonify({"error": "Image file is empty"}), 400
+            
+        # Compress and resize the image to speed up API response
+        try:
+            img = Image.open(io.BytesIO(file_content))
+            # Convert to RGB if needed
+            if img.mode in ("RGBA", "P"):
+                img = img.convert("RGB")
+            
+            # Resize image to max 512x512 while maintaining aspect ratio
+            img.thumbnail((512, 512), Image.Resampling.LANCZOS)
+            
+            buffer = io.BytesIO()
+            img.save(buffer, format="JPEG", quality=75)
+            compressed_content = buffer.getvalue()
+            image_b64 = base64.b64encode(compressed_content).decode("utf-8")
+            mime_type = "image/jpeg"
+        except Exception as e:
+            # Fallback to original content if processing fails
+            print(f"Image processing failed: {str(e)}")
+            image_b64 = base64.b64encode(file_content).decode("utf-8")
+        
+        try:
+            classification_result = _classify_image_with_nvidia(image_b64, mime_type)
+            return jsonify({
+                "success": True,
+                "filename": file.filename,
+                "classification": classification_result,
+                "model": "meta/llama-3.2-11b-vision-instruct",
+                "api": "OpenAI-compatible",
+                "timestamp": datetime.now().isoformat(timespec="seconds")
+            })
+        except Exception as api_error:
+            return jsonify({
+                "error": f"API error: {str(api_error)}",
+                "type": "api_error"
+            }), 500
+
+    except Exception as e:
+        return jsonify({
+            "error": f"Server error: {str(e)}",
+            "type": "server_error"
+        }), 500
+
 
 
 BOOKS_DATA_PATH = os.path.join(os.path.dirname(__file__), '..', 'frontend', 'books_data.json')

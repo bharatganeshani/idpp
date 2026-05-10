@@ -62,6 +62,9 @@
         <div class="mode-tab" data-mode="file" role="tab" id="modeFile">
           <i data-lucide="upload-cloud" style="width:15px;height:15px;"></i> Upload Document
         </div>
+        <div class="mode-tab" data-mode="image" role="tab" id="modeImage">
+          <i data-lucide="image" style="width:15px;height:15px;"></i> Analyze Cover
+        </div>
       </div>
 
       <form id="aiClassificationForm" autocomplete="off">
@@ -109,6 +112,31 @@
                   <span id="fileNameDisplay" style="font-weight:600;">file.pdf</span>
                 </div>
                 <button type="button" class="icon-btn" id="clearFileBtn" style="width:32px;height:32px;border:none;background:transparent;color:inherit;">
+                  <i data-lucide="x"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Image Mode ── -->
+        <div id="imageModeSection" class="hidden">
+          <div class="form-group">
+            <label>Book Cover Image</label>
+            <div class="upload-zone" id="imageUploadZone">
+              <input id="aiBookImage" type="file" accept=".png,.jpg,.jpeg,.webp" hidden>
+              <div class="upload-content" id="imageUploadContent">
+                <div class="upload-icon-wrapper"><i data-lucide="image-plus"></i></div>
+                <h3 style="font-size:1rem;font-weight:700;">Drag &amp; drop your cover here</h3>
+                <p style="font-size:0.88rem;">Supports PNG, JPG, WEBP — max 10 MB</p>
+                <button type="button" class="btn btn-outline" style="margin-top:10px;" onclick="document.getElementById('aiBookImage').click()">Browse Images</button>
+              </div>
+              <div id="imageSelectedInfo" class="hidden file-selected-info">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <i data-lucide="image"></i>
+                  <span id="imageNameDisplay" style="font-weight:600;">cover.jpg</span>
+                </div>
+                <button type="button" class="icon-btn" id="clearImageBtn" style="width:32px;height:32px;border:none;background:transparent;color:inherit;">
                   <i data-lucide="x"></i>
                 </button>
               </div>
