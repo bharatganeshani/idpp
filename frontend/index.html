@@ -3,129 +3,153 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nexus | AI Book Classification</title>
+  <title>Nexus AI | Book Classification</title>
+  <meta name="description" content="Nexus AI — classify any book by title, summary, or full document upload using advanced AI.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
-  <script defer src="https://unpkg.com/lucide@0.468.0"></script>
-  <script defer src="script.js"></script>
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 </head>
 <body class="dark-theme">
-  <!-- Animated Background Blobs -->
+  <!-- Animated Background -->
   <div class="animated-bg">
     <div class="blob blob-1"></div>
     <div class="blob blob-2"></div>
     <div class="blob blob-3"></div>
   </div>
 
+  <!-- Header -->
   <header class="glass-header">
     <div class="container header-inner">
       <div class="brand">
         <div class="logo-icon"><i data-lucide="brain-circuit"></i></div>
-        <span>Nexus AI</span>
+        <span>Nexus <span style="color:var(--primary-light)">AI</span></span>
       </div>
       <div class="header-actions">
-        <div id="userInfo" class="hidden" style="display:flex; align-items:center; gap:8px; margin-right: 16px; font-weight: 500;">
-          <span id="userBadge" style="padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; background: rgba(79, 70, 229, 0.1); color: var(--primary); text-transform: uppercase;">Role</span>
-          <span id="userNameDisplay">Username</span>
+        <div id="userInfo" class="hidden">
+          <span id="userBadge">Role</span>
+          <span id="userNameDisplay">User</span>
         </div>
-        <button id="themeToggle" class="icon-btn" aria-label="Toggle Theme">
+        <button id="themeToggle" class="icon-btn" aria-label="Toggle Theme" title="Toggle Theme">
           <i data-lucide="sun"></i>
         </button>
-        <button id="historyToggle" class="btn btn-secondary">
+        <button id="historyToggle" class="btn btn-secondary" title="View history">
           <i data-lucide="history"></i> History
         </button>
-        <button id="logoutBtn" class="icon-btn" style="border-color: var(--danger); color: var(--danger); background: transparent;" title="Log out">
+        <button id="logoutBtn" class="icon-btn" style="border-color:var(--danger);color:var(--danger);" title="Log out">
           <i data-lucide="log-out"></i>
         </button>
       </div>
     </div>
   </header>
 
+  <!-- Main -->
   <main class="container main-layout">
-    <!-- Left Input Panel -->
+
+    <!-- Left: Input Panel -->
     <div class="input-panel glass-panel reveal">
-      <div class="panel-header" style="margin-bottom: 24px;">
+      <div class="panel-header">
         <h2>New Analysis</h2>
-        <p>Upload a book or paste its content for deep AI extraction.</p>
+        <p>Classify any book using its title, summary, or by uploading a document.</p>
       </div>
-      
+
+      <!-- Classification Mode Tabs -->
+      <div class="mode-tabs" id="modeTabs" role="tablist">
+        <div class="mode-tab active" data-mode="text" role="tab" id="modeText">
+          <i data-lucide="type" style="width:15px;height:15px;"></i> Title &amp; Summary
+        </div>
+        <div class="mode-tab" data-mode="file" role="tab" id="modeFile">
+          <i data-lucide="upload-cloud" style="width:15px;height:15px;"></i> Upload Document
+        </div>
+      </div>
+
       <form id="aiClassificationForm" autocomplete="off">
-        <div class="form-group">
-          <label for="aiBookTitle">Book Title <span class="optional">(Optional)</span></label>
-          <div class="input-wrapper">
-            <i data-lucide="book"></i>
-            <input id="aiBookTitle" type="text" placeholder="e.g., Deep Learning Fundamentals">
-          </div>
-        </div>
 
-        <div class="form-group">
-          <label for="aiBookContent">Content or Summary</label>
-          <div class="input-wrapper textarea-wrapper">
-            <i data-lucide="align-left" class="textarea-icon"></i>
-            <textarea id="aiBookContent" rows="5" placeholder="Paste book content, summary, or description here..."></textarea>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label>File Upload</label>
-          <div class="upload-zone" id="uploadZone">
-            <input id="aiBookFile" type="file" accept=".txt,.md,.pdf" hidden>
-            <div class="upload-content">
-              <div class="upload-icon-wrapper"><i data-lucide="cloud-upload"></i></div>
-              <h3 style="font-size: 1.1rem; font-weight: 600;">Drag & drop your file here</h3>
-              <p style="font-size: 0.9rem;">Supported formats: .txt, .md, .pdf (Max 50MB)</p>
-              <button type="button" class="btn btn-outline" style="margin-top: 12px;" onclick="document.getElementById('aiBookFile').click()">Browse Files</button>
+        <!-- ── Text Mode ── -->
+        <div id="textModeSection">
+          <div class="form-group">
+            <label for="aiBookTitle">Book Title <span class="optional">(recommended)</span></label>
+            <div class="input-wrapper">
+              <i data-lucide="book-open"></i>
+              <input id="aiBookTitle" type="text" placeholder="e.g., The Lean Startup">
             </div>
-            <div id="fileSelectedInfo" class="hidden file-selected-info">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <i data-lucide="file-text"></i>
-                <span id="fileNameDisplay" style="font-weight: 500;">filename.pdf</span>
+          </div>
+          <div class="form-group">
+            <label for="aiBookContent">Summary or Description <span class="optional">(optional)</span></label>
+            <div class="input-wrapper textarea-wrapper">
+              <i data-lucide="align-left" class="textarea-icon"></i>
+              <textarea id="aiBookContent" rows="5" placeholder="Paste a book summary, back-cover blurb, or any descriptive content…"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── File Mode ── -->
+        <div id="fileModeSection" class="hidden">
+          <div class="form-group">
+            <label for="aiBookTitleFile">Book Title <span class="optional">(optional)</span></label>
+            <div class="input-wrapper">
+              <i data-lucide="book"></i>
+              <input id="aiBookTitleFile" type="text" placeholder="Override auto-detected title">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Document Upload</label>
+            <div class="upload-zone" id="uploadZone">
+              <input id="aiBookFile" type="file" accept=".txt,.md,.pdf" hidden>
+              <div class="upload-content" id="uploadContent">
+                <div class="upload-icon-wrapper"><i data-lucide="cloud-upload"></i></div>
+                <h3 style="font-size:1rem;font-weight:700;">Drag &amp; drop your file here</h3>
+                <p style="font-size:0.88rem;">Supports .txt, .md, .pdf — max 50 MB</p>
+                <button type="button" class="btn btn-outline" style="margin-top:10px;" onclick="document.getElementById('aiBookFile').click()">Browse Files</button>
               </div>
-              <button type="button" class="icon-btn" id="clearFileBtn" style="width: 32px; height: 32px; border: none; background: transparent; color: inherit;"><i data-lucide="x"></i></button>
+              <div id="fileSelectedInfo" class="hidden file-selected-info">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <i data-lucide="file-text"></i>
+                  <span id="fileNameDisplay" style="font-weight:600;">file.pdf</span>
+                </div>
+                <button type="button" class="icon-btn" id="clearFileBtn" style="width:32px;height:32px;border:none;background:transparent;color:inherit;">
+                  <i data-lucide="x"></i>
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
         <button id="aiClassifyButton" type="submit" class="btn btn-primary btn-glow full-width">
-          <span class="btn-text">Initialize Analysis</span>
+          <span class="btn-text">Analyze Book</span>
           <i data-lucide="sparkles"></i>
           <div class="loader hidden" id="aiLoadingSpinner"></div>
         </button>
       </form>
     </div>
 
-    <!-- Right Results Panel -->
+    <!-- Right: Results Panel -->
     <div class="results-panel glass-panel reveal" id="resultsPanel">
       <div class="empty-state" id="emptyState">
         <div class="pulse-ring">
           <i data-lucide="scan-line"></i>
         </div>
-        <h3 style="font-size: 1.4rem; margin-bottom: 8px;">Awaiting Data</h3>
-        <p>Submit a book to view AI classification insights.</p>
+        <h3 style="font-size:1.35rem;margin-bottom:8px;font-weight:700;">Ready to Analyze</h3>
+        <p>Enter a title, paste a summary, or upload a document to begin AI classification.</p>
       </div>
-      
-      <div id="aiDetailedResult" class="hidden" style="animation: revealUp 0.5s ease forwards;">
-        <!-- Results injected via JS -->
-      </div>
+      <div id="aiDetailedResult" class="hidden" style="animation:revealUp 0.5s ease forwards;"></div>
     </div>
   </main>
 
-  <!-- Sidebar History -->
+  <!-- History Sidebar -->
   <div class="history-sidebar glass-panel" id="historySidebar">
     <div class="sidebar-header">
-      <h3 style="font-size: 1.2rem;">Analysis History</h3>
-      <button class="icon-btn" id="closeHistory" style="border:none; background:transparent;"><i data-lucide="x"></i></button>
+      <h3 style="font-size:1.1rem;font-weight:700;">Analysis History</h3>
+      <button class="icon-btn" id="closeHistory" style="border:none;background:transparent;"><i data-lucide="x"></i></button>
     </div>
-    <div class="history-list" id="historyList">
-      <!-- History items injected here -->
-    </div>
+    <div class="history-list" id="historyList"></div>
   </div>
   <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
   <!-- Toast Container -->
   <div class="toast-container" id="toastContainer"></div>
 
+  <script src="script.js"></script>
 </body>
 </html>

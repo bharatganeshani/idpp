@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 import os
 import sqlite3
+import threading
+from contextlib import contextmanager
 from datetime import datetime
 from typing import Any
 
@@ -179,19 +181,54 @@ def _classify_with_nvidia(book_title: str, book_content: str) -> dict[str, Any]:
     return _parse_model_json(response_text)
 
 
-def init_db():
-    conn = sqlite3.connect('users.db')
-    c = conn.cursor()
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL,
-            role TEXT NOT NULL
+# ── SQLite thread-safe connection helper ──────────────────────────────────────
+# Each thread gets its own connection object to avoid cross-thread sharing.
+# WAL mode allows concurrent readers + 1 writer without "database is locked".
+_local = threading.local()
+DB_PATH = os.path.join(os.path.dirname(__file__), 'users.db')
+
+
+def _get_conn() -> sqlite3.Connection:
+    """Return a thread-local SQLite connection, creating it if needed."""
+    conn = getattr(_local, 'conn', None)
+    if conn is None:
+        conn = sqlite3.connect(
+            DB_PATH,
+            timeout=30,                 # wait up to 30 s before raising OperationalError
+            check_same_thread=False,    # we manage thread safety ourselves via _local
         )
-    ''')
-    conn.commit()
-    conn.close()
+        conn.row_factory = sqlite3.Row
+        # WAL journal mode: readers don't block writers and vice-versa
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA synchronous=NORMAL")
+        _local.conn = conn
+    return conn
+
+
+@contextmanager
+def get_db():
+    """Context manager that yields a cursor and commits/rolls back automatically."""
+    conn = _get_conn()
+    try:
+        cursor = conn.cursor()
+        yield cursor
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+
+
+def init_db():
+    with get_db() as c:
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT UNIQUE NOT NULL,
+                password TEXT NOT NULL,
+                role TEXT NOT NULL
+            )
+        ''')
+
 
 init_db()
 
@@ -227,21 +264,21 @@ def register() -> Any:
     if request.method == "OPTIONS":
         return ("", 204)
     data = request.get_json(silent=True) or {}
-    username = data.get("username")
-    password = data.get("password")
+    username = (data.get("username") or "").strip().lower()
+    password = data.get("password") or ""
     role = data.get("role", "user")
-    
+
     if not username or not password:
         return jsonify({"error": "Username and password required"}), 400
-        
+
     hashed_password = generate_password_hash(password)
-    
+
     try:
-        conn = sqlite3.connect('users.db')
-        c = conn.cursor()
-        c.execute('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', (username, hashed_password, role))
-        conn.commit()
-        conn.close()
+        with get_db() as c:
+            c.execute(
+                'INSERT INTO users (username, password, role) VALUES (?, ?, ?)',
+                (username, hashed_password, role)
+            )
         return jsonify({"success": True, "message": "Registered successfully"})
     except sqlite3.IntegrityError:
         return jsonify({"error": "Username already exists"}), 400
@@ -254,26 +291,26 @@ def login() -> Any:
     if request.method == "OPTIONS":
         return ("", 204)
     data = request.get_json(silent=True) or {}
-    username = data.get("username")
-    password = data.get("password")
-    
+    username = (data.get("username") or "").strip().lower()
+    password = data.get("password") or ""
+
     if not username or not password:
         return jsonify({"error": "Username and password required"}), 400
-        
-    conn = sqlite3.connect('users.db')
-    c = conn.cursor()
-    c.execute('SELECT password, role FROM users WHERE username = ?', (username,))
-    user = c.fetchone()
-    conn.close()
-    
+
+    try:
+        with get_db() as c:
+            c.execute('SELECT password, role FROM users WHERE username = ?', (username,))
+            user = c.fetchone()
+    except Exception as e:
+        return jsonify({"error": f"Database error: {str(e)}"}), 500
+
     if user and check_password_hash(user[0], password):
         return jsonify({
-            "success": True, 
+            "success": True,
             "username": username,
             "role": user[1]
         })
-    else:
-        return jsonify({"error": "Invalid username or password"}), 401
+    return jsonify({"error": "Invalid username or password"}), 401
 
 
 @app.route("/health", methods=["GET"])
@@ -303,11 +340,14 @@ def classify_with_ai() -> Any:
         book_content = str(payload.get("content", "")).strip()
         book_title = str(payload.get("title", "")).strip()
         
-        if not book_content:
-            return jsonify({"error": "book content is required"}), 400
+        if not book_content and not book_title:
+            return jsonify({"error": "Either book title or book content is required"}), 400
+            
+        if not book_content and book_title:
+            book_content = f"Please classify this book based entirely on its title: '{book_title}'"
         
-        # Limit content to first 8000 characters for API efficiency
-        book_content = book_content[:8000]
+        # Limit content to first 3000 characters for massive API speedup
+        book_content = book_content[:3000]
         
         try:
             classification_result = _classify_with_nvidia(book_title, book_content)
@@ -359,6 +399,8 @@ def upload_and_classify() -> Any:
                         file_content = ""
                         for page in pdf_reader.pages:
                             file_content += page.extract_text() + "\n"
+                            if len(file_content) > 10000:
+                                break
                         file_content = file_content.strip()
                     except Exception as pdf_error:
                         return jsonify({
@@ -377,7 +419,7 @@ def upload_and_classify() -> Any:
             return jsonify({"error": "File is empty"}), 400
         
         # Use the classify endpoint logic
-        book_content = file_content[:8000]
+        book_content = file_content[:3000]
         
         try:
             classification_result = _classify_with_nvidia(
@@ -405,5 +447,42 @@ def upload_and_classify() -> Any:
         }), 500
 
 
+BOOKS_DATA_PATH = os.path.join(os.path.dirname(__file__), '..', 'frontend', 'books_data.json')
+
+@app.route("/books", methods=["GET"])
+def get_books() -> Any:
+    """Return books dataset with optional genre/search filtering."""
+    try:
+        with open(BOOKS_DATA_PATH, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        books = data.get('books', [])
+        genre = request.args.get('genre', '').strip()
+        search = request.args.get('search', '').strip().lower()
+        if genre:
+            books = [b for b in books if b.get('genre', '').lower() == genre.lower()]
+        if search:
+            books = [b for b in books if search in b.get('title', '').lower()
+                     or search in b.get('author', '').lower()
+                     or search in b.get('description', '').lower()]
+        return jsonify({"success": True, "books": books, "total": len(books),
+                        "genres": data.get('genres', [])})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/books/genres", methods=["GET"])
+def get_genres() -> Any:
+    """Return list of all available genres."""
+    try:
+        with open(BOOKS_DATA_PATH, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        return jsonify({"success": True, "genres": data.get('genres', [])})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+
+    # threaded=True is Flask's default; use_reloader=False avoids the
+    # double-process issue that can cause SQLite locking in debug mode.
+    app.run(host="0.0.0.0", port=5000, debug=True, threaded=True, use_reloader=False)

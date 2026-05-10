@@ -1,265 +1,210 @@
-# AI-Based Book Classification System
+# 📚 AI-Based Automated Book Classification System
 
-A modern NLP and AI-powered system for comprehensive book classification and analysis. The system combines fast local ML classification with detailed AI-powered analysis using OpenAI-compatible APIs.
+A modern NLP and AI-powered system for comprehensive book classification and analysis. Combines fast AI-powered analysis (via Nvidia/OpenAI-compatible API) with a built-in **Books Explorer** featuring a curated dataset of **100 books across 30 genres**.
+
+---
 
 ## ✨ Features
 
-### 🚀 Dual Classification Approaches
+### 🤖 AI Classification Engine
+- Powered by **Nvidia / Kimi K2.6** OpenAI-compatible API
+- Extracts: primary category, secondary categories, themes, keywords
+- Returns: difficulty level, reading time estimate, target audience, key insights
+- Supports text input, summary input, and `.txt / .md / .pdf` file uploads
 
-1. **ML Classifier** - Fast & Local
-   - TF-IDF feature extraction
-   - Logistic Regression model
-   - ~100ms response time
-   - 92% accuracy
-   - No external API calls needed
-
-2. **AI-Powered Classifier** - Detailed & Comprehensive
-   - Uses Nvidia/Kimi OpenAI-compatible API
-   - Extracts detailed metadata
-   - Provides themes, keywords, insights
-   - Estimates difficulty and reading time
-   - Suggests related topics
+### 📚 Books Explorer (NEW)
+- **100 curated books** across **30 genres** built into the frontend
+- Genre filter bar — click any genre to filter instantly
+- Live search across title, author, and description
+- **"Classify This"** button on every book — auto-fills the classifier
+- Data served from `frontend/books_data.json` and also via the `/books` API endpoint
 
 ### 📊 Classification Output
-
-**ML Classifier Returns:**
-- Primary category
-- Confidence score
-- Model metrics
-
-**AI Classifier Returns:**
 - Primary & secondary categories
-- Themes and keywords
+- Themes and subject keywords
 - Content type & difficulty level
 - Target audience
-- Key insights (3-5 takeaways)
+- Key insights (3–5 takeaways)
 - Estimated reading time
-- Related topics
-- Comprehensive summary
-- Confidence score
+- Related topics & comprehensive summary
+- Confidence score (0–1)
 
-## 📁 Quick Start
+---
+
+## 📁 Project Structure
+
+```
+idpp-main/
+├── backend/
+│   ├── app.py              # Flask API server
+│   ├── requirements.txt    # Python dependencies
+│   ├── users.db            # SQLite user database
+│   └── .env                # API credentials (not committed)
+├── frontend/
+│   ├── index.html          # Main web interface
+│   ├── login.html          # Login / Register page
+│   ├── script.js           # UI logic + Books Explorer
+│   ├── login.js            # Auth logic
+│   ├── styles.css          # Styling
+│   └── books_data.json     # 100-book dataset (30 genres)
+├── goodreads_samples/      # Sample book text files
+├── test_api.py             # API test suite
+├── USAGE.md                # Detailed API documentation
+└── README.md               # This file
+```
+
+---
+
+## 🚀 Quick Start
 
 ### Prerequisites
 - Python 3.10+
-- Virtual environment (already created)
-- Dependencies installed
+- Dependencies installed (`pip install -r backend/requirements.txt`)
 
-### 1. API Configuration (Already Done ✓)
-The `.env` file contains your Nvidia credentials:
+### 1. Configure API Key
+Edit `backend/.env`:
 ```
 api_endpoint=https://integrate.api.nvidia.com/v1/chat/completions
 api_key=YOUR_NVIDIA_API_KEY
 model=moonshotai/kimi-k2.6
 ```
 
-### 2. Start Backend Server
-```bash
+### 2. Start Backend
+```powershell
 cd backend
 python app.py
 ```
-Server runs on: `http://localhost:5000`
+Backend runs on: `http://localhost:5000`
 
-### 3. Open Frontend
-Open `frontend/index.html` in your browser:
-```bash
-# Option 1: Direct open in browser
-frontend/index.html
-
-# Option 2: Serve with Python
-cd frontend
-python -m http.server 8000
-# Then visit: http://localhost:8000
+### 3. Start Frontend
+```powershell
+# From project root:
+python -m http.server 8080 --directory frontend
+# Visit: http://localhost:8080/login.html
 ```
 
 ### 4. Use the System
-
-**ML Classifier Tab:**
-1. Enter book title
-2. Enter description or upload .txt file
-3. Click "Classify Book"
-
-**AI-Powered Classifier Tab:**
-1. Enter book title (optional)
-2. Paste content or upload .txt/.md file
-3. Click "Analyze with AI"
-4. Get comprehensive analysis
-
-## 🔌 API Endpoints
-
-### GET /
-Returns system status and endpoints
-
-### GET /health
-System health check with model metrics
-
-### POST /predict (ML Classifier)
-```json
-{
-  "title": "Deep Learning Fundamentals",
-  "description": "Introduction to neural networks..."
-}
-```
-
-### POST /classify (AI Classifier)
-```json
-{
-  "title": "Quantum Computing",
-  "content": "Full book content here..."
-}
-```
-
-### POST /upload-and-classify (File Upload)
-```
-Form data:
-- file: book.txt or book.md
-- title: Book Title (optional)
-```
-
-## 📚 File Support
-- Plain text (.txt)
-- Markdown (.md)
-- Direct text input
-- Up to 8000 characters per analysis
-
-## 🏗️ Architecture
-
-```
-Project Structure:
-├── backend/
-│   ├── app.py              # Flask API server
-│   ├── requirements.txt    # Python dependencies
-│   └── .env               # API configuration
-├── frontend/
-│   ├── index.html         # Web interface
-│   ├── script.js          # UI logic
-│   └── styles.css         # Styling
-├── test_api.py            # Test suite
-├── USAGE.md              # Detailed API documentation
-└── README.md             # This file
-```
-
-## 📊 Performance
-
-| Operation | Time | Notes |
-|-----------|------|-------|
-| Health Check | <50ms | Local |
-| ML Classification | ~100ms | Local processing |
-| AI Classification | 5-10s | API dependent |
-
-## 🛠️ Technology Stack
-
-**Backend:**
-- Python 3.12
-- Flask (REST API)
-- scikit-learn (ML models)
-- NLTK (NLP preprocessing)
-- OpenAI Python SDK
-
-**Frontend:**
-- HTML5, CSS3, JavaScript
-- Lucide Icons
-
-**APIs:**
-- Nvidia (OpenAI-compatible)
-- Kimi K2.6 model
-
-## 📖 Detailed Documentation
-
-- **API Documentation**: See [USAGE.md](USAGE.md)
-- **Test Suite**: Run `python test_api.py`
-- **Examples**: See USAGE.md for curl examples
-
-## 🔍 Example Categories
-
-- Technology, Science, History, Business, Philosophy, Fiction, Self-Help, and more
-
-## 🚀 Running Tests
-
-```bash
-python test_api.py
-```
-
-Tests:
-- Health check
-- ML classifier
-- AI classifier
-- File upload
-
-## 🔐 Security
-
-- API keys in `.env` (not in code)
-- Add `.env` to `.gitignore`
-- CORS configured for localhost
-- Input validation on all endpoints
-- File upload restrictions
-
-## 📝 Original Folder Structure
-
-```
-idpp/
-├─ frontend/
-│  ├─ index.html
-│  ├─ styles.css
-│  └─ script.js
-├─ backend/
-│  ├─ app.py
-│  └─ requirements.txt
-├─ src/
-├─ package.json
-└─ README.md
-```
-
-## ⚡ Common Tasks
-
-**Start Everything:**
-```bash
-# Terminal 1: Backend
-cd backend && python app.py
-
-# Terminal 2: Frontend (optional)
-cd frontend && python -m http.server 8000
-
-# Terminal 3: Tests (optional)
-python test_api.py
-```
-
-**Use Frontend Only:**
-- Open `frontend/index.html` directly
-
-**Use API with curl:**
-```bash
-curl -X POST http://localhost:5000/predict \
-  -H "Content-Type: application/json" \
-  -d '{"title": "Book Title", "description": "Description..."}'
-```
-
-## 🎯 Next Steps
-
-1. ✓ API configured with Nvidia credentials
-2. ✓ Backend code ready with AI integration
-3. ✓ Frontend with AI classification tab
-4. → Start backend server and open frontend
-5. → Upload book content and get AI analysis
-
-## 📞 Support
-
-- API Documentation: [USAGE.md](USAGE.md)
-- Test Suite: `python test_api.py`
-- Check logs for errors
-- Verify API credentials in `.env`
+1. **Register / Login** on the login page
+2. Enter a book title and/or summary → click **Analyze Book**
+3. Or **upload** a `.txt`, `.md`, or `.pdf` file
+4. Scroll down to **Books Explorer** to browse 100 books and click **Classify This** on any
 
 ---
 
-**Status**: ✓ Ready to use
-**Version**: 1.0 with AI Integration
-**Last Updated**: 2026-05-06
+## 🔌 API Endpoints
 
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/` | System status |
+| GET | `/health` | Health check |
+| POST | `/register` | Register new user |
+| POST | `/login` | User login |
+| POST | `/classify` | Classify book by title/content |
+| POST | `/upload-and-classify` | Upload file and classify |
+| GET | `/books` | Get books dataset (filterable) |
+| GET | `/books?genre=Fantasy` | Filter books by genre |
+| GET | `/books?search=harry` | Search books |
+| GET | `/books/genres` | List all available genres |
+
+### POST /classify
 ```json
 {
-  "title": "Deep Learning with Python",
-  "description": "Practical machine learning and neural networks guide."
+  "title": "Atomic Habits",
+  "content": "A practical guide to building good habits..."
 }
 ```
 
-When backend is running, the demo section automatically uses real API predictions. If backend is unavailable, it falls back to browser-based mock prediction.
+### GET /books
+```json
+{
+  "success": true,
+  "total": 100,
+  "genres": ["Adventure", "Biography", ...],
+  "books": [
+    {
+      "id": 1,
+      "title": "Harry Potter and the Sorcerer's Stone",
+      "author": "J.K. Rowling",
+      "genre": "Fantasy",
+      "year": 1997,
+      "rating": 4.47,
+      "description": "...",
+      "pages": 309,
+      "language": "English"
+    }
+  ]
+}
+```
+
+---
+
+## 📊 Books Dataset
+
+| Stat | Value |
+|------|-------|
+| Total Books | 100 |
+| Genres Covered | 30 |
+| Source | Curated from Goodreads / public domain |
+| File | `frontend/books_data.json` |
+
+**Genres included:** Adventure, Autobiography, Biography, Business, Children's, Classic, Contemporary, Dystopian, Education, Fantasy, Fiction, Finance, Graphic Novel, Historical Fiction, Horror, Memoir, Mystery, Non-Fiction, Philosophy, Poetry, Psychology, Romance, Science, Science Fiction, Self-Help, Spirituality, Thriller, Travel, True Crime, Young Adult
+
+---
+
+## 🛠️ Technology Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Backend | Python 3.12, Flask, SQLite |
+| AI Model | Nvidia / Kimi K2.6 (OpenAI-compatible) |
+| PDF Support | PyPDF2 |
+| Frontend | HTML5, CSS3, Vanilla JavaScript |
+| Icons | Lucide Icons |
+| Auth | SQLite + Werkzeug password hashing |
+| Dataset | JSON (100 books, 30 genres) |
+
+---
+
+## 🔐 Security
+- API keys stored in `.env` (never committed)
+- Passwords hashed with Werkzeug (`pbkdf2:sha256`)
+- CORS configured for local development
+- Input validation on all endpoints
+- File upload restricted to `.txt`, `.md`, `.pdf`
+
+---
+
+## 📈 Performance
+
+| Operation | Time |
+|-----------|------|
+| Health Check | < 50ms |
+| AI Classification | 5–10s (API dependent) |
+| Books Explorer Load | < 100ms (local JSON) |
+| `/books` API | < 50ms |
+
+---
+
+## 🧪 Running Tests
+```powershell
+python test_api.py
+```
+
+---
+
+## ⚡ Start Everything (Two Terminals)
+
+```powershell
+# Terminal 1 — Backend
+cd backend; python app.py
+
+# Terminal 2 — Frontend
+python -m http.server 8080 --directory frontend
+# Open: http://localhost:8080/login.html
+```
+
+---
+
+**Status**: ✅ Ready to use  
+**Version**: 2.0 — with Books Explorer Dataset  
+**Last Updated**: 2026-05-10
