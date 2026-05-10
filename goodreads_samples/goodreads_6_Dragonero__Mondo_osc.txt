@@ -1,0 +1,4 @@
+Title: Dragonero  Mondo oscuro n. 1: A guardia della notte
+Original Goodreads Genre: Graphic Novels
+
+Note: The dataset only provided the title, so we will ask the AI to classify this book based entirely on its title.

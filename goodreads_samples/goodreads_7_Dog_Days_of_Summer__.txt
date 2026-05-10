@@ -1,0 +1,4 @@
+Title: Dog Days of Summer (Gone to the Dogs #2)
+Original Goodreads Genre: Mystery
+
+Note: The dataset only provided the title, so we will ask the AI to classify this book based entirely on its title.

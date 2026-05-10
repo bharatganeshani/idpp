@@ -1,0 +1,6 @@
+Title: Clean Architecture: A Craftsman's Guide to Software Structure and Design
+Author: Robert C. Martin
+
+Building upon the success of best-sellers The Clean Coder and Clean Code, legendary software craftsman Robert C. Martin ("Uncle Bob") reveals the rules of software architecture and how to apply them. Martin's Clean Architecture doesn't merely present options. Drawing on over a half-century of experience in software environments of every imaginable type, Martin tells you what choices to make and why they are critical to your success.
+
+By reading this book, you will learn what software architects need to achieve—and core disciplines and practices for achieving it. You will master essential software design principles for addressing function, component separation, and data management. You will learn how programming paradigms impose discipline by restricting what developers can do. You will understand what's critically important and what's merely a "detail." You will learn how to implement optimal, high-level structures for web, database, thick-client, console, and embedded applications.
