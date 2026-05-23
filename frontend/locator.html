@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nexus AI | Book Locator</title>
+  <meta name="description" content="Find any book's exact location in the library — shelf and area — instantly.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+</head>
+<body class="dark-theme">
+
+  <!-- Animated Background -->
+  <div class="animated-bg">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <!-- Header -->
+  <header class="glass-header">
+    <div class="container header-inner">
+      <div class="brand">
+        <div class="logo-icon"><i data-lucide="brain-circuit"></i></div>
+        <span>Nexus <span style="color:var(--primary-light)">AI</span></span>
+      </div>
+      <nav class="locator-nav" aria-label="Main navigation">
+        <a href="index.html" class="nav-link" id="navClassifier">
+          <i data-lucide="sparkles" style="width:15px;height:15px;"></i> AI Classifier
+        </a>
+        <a href="locator.html" class="nav-link active" id="navLocator">
+          <i data-lucide="map-pin" style="width:15px;height:15px;"></i> Book Locator
+        </a>
+      </nav>
+      <div class="header-actions">
+        <div id="userInfo" class="hidden">
+          <span id="userBadge">Role</span>
+          <span id="userNameDisplay">User</span>
+        </div>
+        <button id="themeToggle" class="icon-btn" aria-label="Toggle Theme" title="Toggle Theme">
+          <i data-lucide="sun"></i>
+        </button>
+        <button id="logoutBtn" class="icon-btn" style="border-color:var(--danger);color:var(--danger);" title="Log out">
+          <i data-lucide="log-out"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Search Section -->
+  <section class="locator-hero">
+    <div class="container">
+      <div class="locator-hero-content reveal">
+        <div class="locator-hero-icon">
+          <i data-lucide="map-pin"></i>
+        </div>
+        <h1 class="locator-hero-title">Book <span class="gradient-text">Locator</span></h1>
+        <p class="locator-hero-subtitle">Find any book's exact location in the library — shelf, area, and more.</p>
+        <div class="locator-search-wrap">
+          <i data-lucide="search" class="locator-search-icon"></i>
+          <input type="text" id="locatorSearch" class="locator-search-input"
+            placeholder="Search by title or author…" autocomplete="off" aria-label="Search books">
+          <span id="locatorCount" class="locator-search-count hidden">0 results</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Content -->
+  <main class="container locator-main">
+
+    <!-- Librarian Toolbar -->
+    <div id="librarianBar" class="librarian-bar hidden reveal">
+      <div class="librarian-bar-info">
+        <i data-lucide="shield-check"></i>
+        <span>Librarian Mode — you can add, edit, and remove book locations</span>
+      </div>
+      <button id="addLocationBtn" class="btn btn-primary btn-glow" aria-label="Add book location">
+        <i data-lucide="plus"></i>
+        <span>Add Location</span>
+      </button>
+    </div>
+
+    <!-- Stats Row -->
+    <div id="statsRow" class="locator-stats-row hidden">
+      <div class="locator-stat-card">
+        <span id="statTotal">0</span>
+        <label>Books Located</label>
+      </div>
+      <div class="locator-stat-card">
+        <span id="statAreas">0</span>
+        <label>Library Areas</label>
+      </div>
+      <div class="locator-stat-card">
+        <span id="statShelves">0</span>
+        <label>Shelves Used</label>
+      </div>
+    </div>
+
+    <!-- Results Grid -->
+    <div id="locatorGrid" class="locator-grid" role="list" aria-label="Book locations"></div>
+
+    <!-- Empty State -->
+    <div id="locatorEmpty" class="locator-empty hidden">
+      <div class="pulse-ring">
+        <i data-lucide="map-pin-off"></i>
+      </div>
+      <h3>No Locations Found</h3>
+      <p id="locatorEmptyMsg">No books have been located yet. A librarian can add locations using the button above.</p>
+    </div>
+
+  </main>
+
+  <!-- Add / Edit Slide Panel -->
+  <div class="locator-panel-overlay hidden" id="panelOverlay" role="presentation"></div>
+  <aside class="locator-panel glass-panel hidden" id="locationPanel" aria-label="Location form" role="complementary">
+    <div class="panel-head">
+      <h3 id="panelTitle">Add Book Location</h3>
+      <button class="icon-btn" id="closePanelBtn" aria-label="Close panel" style="border:none;background:transparent;">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <form id="locationForm" autocomplete="off" novalidate>
+      <input type="hidden" id="editLocationId" value="">
+
+      <div class="form-group">
+        <label for="locBookTitle">Book Title <span style="color:var(--danger)">*</span></label>
+        <div class="input-wrapper">
+          <i data-lucide="book-open"></i>
+          <input type="text" id="locBookTitle" placeholder="e.g., The Great Gatsby" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="locAuthor">Author <span class="optional">(optional)</span></label>
+        <div class="input-wrapper">
+          <i data-lucide="user"></i>
+          <input type="text" id="locAuthor" placeholder="e.g., F. Scott Fitzgerald">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="locArea">Library Area <span style="color:var(--danger)">*</span></label>
+        <div class="input-wrapper">
+          <i data-lucide="layout-grid"></i>
+          <input type="text" id="locArea" placeholder="e.g., Ground Floor – Section A" required>
+        </div>
+        <p style="font-size:0.8rem;color:var(--text-muted);margin-top:6px;">The section of the library where this book is stored.</p>
+      </div>
+
+      <div class="form-group">
+        <label for="locShelf">Shelf <span style="color:var(--danger)">*</span></label>
+        <div class="input-wrapper">
+          <i data-lucide="archive"></i>
+          <input type="text" id="locShelf" placeholder="e.g., Shelf B-12, Row 3" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="locNotes">Notes <span class="optional">(optional)</span></label>
+        <div class="input-wrapper textarea-wrapper">
+          <i data-lucide="sticky-note" class="textarea-icon"></i>
+          <textarea id="locNotes" rows="3" placeholder="e.g., Behind the reference desk, last copy"></textarea>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;margin-top:8px;">
+        <button type="button" class="btn btn-secondary" id="cancelPanelBtn" style="flex:1;">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-glow" id="saveLocationBtn" style="flex:2;">
+          <span class="btn-text">Save Location</span>
+          <i data-lucide="save"></i>
+          <div class="loader hidden" id="savingSpinner"></div>
+        </button>
+      </div>
+    </form>
+  </aside>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal-overlay hidden" id="deleteModalOverlay" role="dialog" aria-modal="true" aria-label="Confirm delete">
+    <div class="modal-box glass-panel">
+      <div style="text-align:center;margin-bottom:24px;">
+        <div class="pulse-ring" style="color:var(--danger);border-color:rgba(239,68,68,0.3);">
+          <i data-lucide="trash-2"></i>
+        </div>
+        <h3 style="margin-top:16px;font-size:1.2rem;font-weight:700;">Remove Location?</h3>
+        <p id="deleteModalMsg" style="color:var(--text-muted);font-size:0.9rem;margin-top:8px;"></p>
+      </div>
+      <div style="display:flex;gap:12px;">
+        <button class="btn btn-secondary" id="cancelDeleteBtn" style="flex:1;">Cancel</button>
+        <button class="btn" id="confirmDeleteBtn"
+          style="flex:1;background:var(--danger);color:#fff;border-color:var(--danger);">
+          <i data-lucide="trash-2" style="width:16px;height:16px;"></i> Delete
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="locator.js"></script>
+</body>
+</html>

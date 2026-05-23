@@ -17,8 +17,9 @@ import base64
 import io
 from PIL import Image
 
-# Load environment variables
-load_dotenv()
+# Load environment variables from the backend/.env file, regardless of CWD
+_env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+load_dotenv(dotenv_path=_env_path)
 
 app = Flask(__name__)
 
@@ -302,11 +303,31 @@ def init_db():
 init_db()
 
 
+def init_locations_db():
+    with get_db() as c:
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS book_locations (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                book_title  TEXT NOT NULL,
+                author      TEXT DEFAULT '',
+                area        TEXT NOT NULL,
+                shelf       TEXT NOT NULL,
+                notes       TEXT DEFAULT '',
+                added_by    TEXT NOT NULL,
+                added_at    TEXT NOT NULL,
+                updated_at  TEXT NOT NULL
+            )
+        ''')
+
+
+init_locations_db()
+
+
 @app.after_request
 def add_cors_headers(response):
     response.headers["Access-Control-Allow-Origin"] = "*"
     response.headers["Access-Control-Allow-Headers"] = "Content-Type"
-    response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
     return response
 
 
@@ -616,6 +637,119 @@ def get_genres() -> Any:
         with open(BOOKS_DATA_PATH, 'r', encoding='utf-8') as f:
             data = json.load(f)
         return jsonify({"success": True, "genres": data.get('genres', [])})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ── Book Locator Endpoints ───────────────────────────────────────────────────
+
+@app.route("/locations", methods=["GET", "OPTIONS"])
+def get_locations() -> Any:
+    """Return all book locations, optionally filtered by ?q= search query."""
+    if request.method == "OPTIONS":
+        return ("", 204)
+    try:
+        q = (request.args.get('q') or '').strip().lower()
+        with get_db() as c:
+            c.execute('SELECT * FROM book_locations ORDER BY updated_at DESC')
+            rows = c.fetchall()
+        locations = [dict(row) for row in rows]
+        if q:
+            locations = [
+                loc for loc in locations
+                if q in loc['book_title'].lower()
+                or q in loc['author'].lower()
+                or q in loc['area'].lower()
+                or q in loc['shelf'].lower()
+            ]
+        return jsonify({"success": True, "locations": locations, "total": len(locations)})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/locations", methods=["POST", "OPTIONS"])
+def add_location() -> Any:
+    """Add a new book location entry. Requires role='library'."""
+    if request.method == "OPTIONS":
+        return ("", 204)
+    try:
+        data = request.get_json(silent=True) or {}
+        role = (data.get('role') or '').strip()
+        if role != 'library':
+            return jsonify({"error": "Only librarians can add locations"}), 403
+
+        book_title = (data.get('book_title') or '').strip()
+        author     = (data.get('author') or '').strip()
+        area       = (data.get('area') or '').strip()
+        shelf      = (data.get('shelf') or '').strip()
+        notes      = (data.get('notes') or '').strip()
+        added_by   = (data.get('added_by') or '').strip()
+
+        if not book_title or not area or not shelf:
+            return jsonify({"error": "book_title, area, and shelf are required"}), 400
+
+        now = datetime.now().isoformat(timespec='seconds')
+        with get_db() as c:
+            c.execute(
+                'INSERT INTO book_locations (book_title, author, area, shelf, notes, added_by, added_at, updated_at) '
+                'VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                (book_title, author, area, shelf, notes, added_by, now, now)
+            )
+            loc_id = c.lastrowid
+        return jsonify({"success": True, "id": loc_id, "message": "Location added"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/locations/<int:loc_id>", methods=["PUT", "OPTIONS"])
+def update_location(loc_id: int) -> Any:
+    """Update an existing book location. Requires role='library'."""
+    if request.method == "OPTIONS":
+        return ("", 204)
+    try:
+        data = request.get_json(silent=True) or {}
+        role = (data.get('role') or '').strip()
+        if role != 'library':
+            return jsonify({"error": "Only librarians can edit locations"}), 403
+
+        book_title = (data.get('book_title') or '').strip()
+        author     = (data.get('author') or '').strip()
+        area       = (data.get('area') or '').strip()
+        shelf      = (data.get('shelf') or '').strip()
+        notes      = (data.get('notes') or '').strip()
+
+        if not book_title or not area or not shelf:
+            return jsonify({"error": "book_title, area, and shelf are required"}), 400
+
+        now = datetime.now().isoformat(timespec='seconds')
+        with get_db() as c:
+            c.execute(
+                'UPDATE book_locations SET book_title=?, author=?, area=?, shelf=?, notes=?, updated_at=? WHERE id=?',
+                (book_title, author, area, shelf, notes, now, loc_id)
+            )
+            if c.rowcount == 0:
+                return jsonify({"error": "Location not found"}), 404
+        return jsonify({"success": True, "message": "Location updated"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/locations/<int:loc_id>", methods=["DELETE", "OPTIONS"])
+def delete_location(loc_id: int) -> Any:
+    """Delete a book location entry. Requires role='library'."""
+    if request.method == "OPTIONS":
+        return ("", 204)
+    try:
+        data = request.get_json(silent=True) or {}
+        role = (data.get('role') or '').strip()
+        if role != 'library':
+            return jsonify({"error": "Only librarians can delete locations"}), 403
+
+        with get_db() as c:
+            c.execute('DELETE FROM book_locations WHERE id=?', (loc_id,))
+            if c.rowcount == 0:
+                return jsonify({"error": "Location not found"}), 404
+        return jsonify({"success": True, "message": "Location deleted"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

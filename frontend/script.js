@@ -15,6 +15,13 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   const user = JSON.parse(userData);
+
+  // Hide Book Locator nav link for non-library users
+  if (user.role !== 'library') {
+    const navLocator = document.getElementById('navLocator');
+    if (navLocator) navLocator.style.display = 'none';
+  }
+
   const userInfoEl = document.getElementById('userInfo');
   if (userInfoEl) {
     userInfoEl.classList.remove('hidden');

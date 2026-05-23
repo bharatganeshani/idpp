@@ -365,3 +365,197 @@ textarea { resize: vertical; min-height: 110px; }
   .glass-panel { padding: 24px 20px; }
   .main-layout { padding: 20px 16px; gap: 20px; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   BOOK LOCATOR PAGE
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Locator Nav Links ── */
+.locator-nav { display: flex; align-items: center; gap: 4px; }
+.nav-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 10px;
+  font-size: 0.88rem; font-weight: 600;
+  color: var(--text-muted); text-decoration: none;
+  transition: all 0.2s; border: 1px solid transparent;
+}
+.nav-link:hover { background: rgba(99,102,241,0.1); color: var(--primary); border-color: rgba(99,102,241,0.2); }
+.nav-link.active { background: rgba(99,102,241,0.12); color: var(--primary); border-color: rgba(99,102,241,0.3); }
+
+/* ── Hero ── */
+.locator-hero { padding: 64px 0 44px; }
+.locator-hero-content { text-align: center; max-width: 660px; margin: 0 auto; }
+.locator-hero-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 76px; height: 76px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  box-shadow: 0 0 48px var(--primary-glow); margin-bottom: 22px;
+  animation: locFloat 3s ease-in-out infinite;
+}
+.locator-hero-icon i { width: 34px; height: 34px; color: #fff; }
+@keyframes locFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+.locator-hero-title { font-size: 3.2rem; font-weight: 800; margin-bottom: 14px; line-height: 1.1; }
+.gradient-text {
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.locator-hero-subtitle { color: var(--text-muted); font-size: 1.05rem; margin-bottom: 34px; }
+
+/* ── Search Bar ── */
+.locator-search-wrap { position: relative; max-width: 580px; margin: 0 auto; }
+.locator-search-icon {
+  position: absolute; left: 18px; top: 50%; transform: translateY(-50%);
+  width: 20px; height: 20px; color: var(--text-muted); pointer-events: none;
+}
+.locator-search-input {
+  width: 100%; padding: 18px 150px 18px 54px;
+  border-radius: 16px; border: 1.5px solid var(--border-color);
+  background: var(--glass-bg); color: var(--text-main);
+  font-size: 1rem; font-family: inherit; outline: none;
+  transition: all 0.3s; box-shadow: 0 4px 28px rgba(0,0,0,0.12);
+}
+.locator-search-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-glow), 0 8px 32px rgba(0,0,0,0.18);
+}
+.locator-search-count {
+  position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+  font-size: 0.78rem; font-weight: 700; color: var(--primary);
+  background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.25);
+  border-radius: 99px; padding: 4px 12px; white-space: nowrap;
+}
+
+/* ── Main ── */
+.locator-main { padding-top: 0; padding-bottom: 80px; }
+
+/* ── Stats Row ── */
+.locator-stats-row {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 16px; margin-bottom: 28px;
+}
+.locator-stat-card {
+  background: var(--card-bg); border: 1px solid var(--border-color);
+  border-radius: 18px; padding: 22px 24px; text-align: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.locator-stat-card:hover { transform: translateY(-3px); box-shadow: 0 10px 28px rgba(0,0,0,0.15); }
+.locator-stat-card span {
+  display: block; font-size: 2.2rem; font-weight: 800;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.locator-stat-card label { font-size: 0.82rem; color: var(--text-muted); font-weight: 500; margin-top: 4px; display: block; }
+
+/* ── Librarian Bar ── */
+.librarian-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px; border-radius: 14px;
+  background: rgba(99,102,241,0.07); border: 1px solid rgba(99,102,241,0.22);
+  margin-bottom: 28px; gap: 16px; flex-wrap: wrap;
+}
+.librarian-bar-info {
+  display: flex; align-items: center; gap: 10px;
+  color: var(--primary); font-size: 0.9rem; font-weight: 600;
+}
+.librarian-bar-info i { width: 18px; height: 18px; flex-shrink: 0; }
+
+/* ── Location Cards Grid ── */
+.locator-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+.loc-card {
+  background: var(--card-bg); border: 1px solid var(--border-color);
+  border-radius: 18px; overflow: hidden;
+  transition: transform 0.25s, box-shadow 0.25s;
+  display: flex; flex-direction: column;
+}
+.loc-card:hover { transform: translateY(-5px); box-shadow: 0 18px 44px rgba(0,0,0,0.22); }
+.loc-card-header {
+  padding: 12px 14px; display: flex;
+  align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border-color);
+}
+.loc-pin {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px; border-radius: 99px;
+  font-size: 0.74rem; font-weight: 700;
+}
+.loc-actions { display: flex; gap: 6px; }
+.loc-action-btn {
+  width: 30px; height: 30px; border-radius: 8px;
+  border: 1px solid var(--border-color); background: var(--bg-secondary);
+  color: var(--text-muted); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.loc-action-btn:hover { background: rgba(99,102,241,0.15); color: var(--primary); border-color: var(--primary); }
+.loc-action-btn.danger:hover { background: rgba(239,68,68,0.15); color: var(--danger); border-color: var(--danger); }
+
+.loc-card-body { padding: 16px; flex: 1; display: flex; flex-direction: column; }
+.loc-book-title { font-size: 1rem; font-weight: 700; color: var(--text-main); margin-bottom: 4px; line-height: 1.35; }
+.loc-book-author { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 14px; }
+.loc-badges { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.loc-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 12px; border-radius: 99px; border: 1px solid;
+  font-size: 0.78rem; font-weight: 600;
+}
+.shelf-badge { background: rgba(99,102,241,0.08); color: var(--primary); border-color: rgba(99,102,241,0.25); }
+.loc-notes { font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 12px; font-style: italic; }
+.loc-meta {
+  display: flex; justify-content: space-between;
+  font-size: 0.74rem; color: var(--text-muted);
+  padding-top: 10px; border-top: 1px solid var(--border-color); margin-top: auto;
+}
+
+/* ── Empty State ── */
+.locator-empty { text-align: center; padding: 80px 20px; color: var(--text-muted); }
+.locator-empty h3 { font-size: 1.3rem; font-weight: 700; color: var(--text-main); margin: 16px 0 8px; }
+.locator-empty p { font-size: 0.92rem; max-width: 420px; margin: 0 auto; }
+
+/* ── Slide Panel ── */
+.locator-panel-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+  z-index: 200; backdrop-filter: blur(4px);
+}
+.locator-panel {
+  position: fixed; top: 0; right: 0; bottom: 0;
+  width: 100%; max-width: 460px; z-index: 201;
+  padding: 28px 28px 48px; overflow-y: auto;
+  border-radius: 0 !important;
+  transform: translateX(110%);
+  transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+}
+.locator-panel.open { transform: translateX(0); }
+.panel-head {
+  display: flex; align-items: center;
+  justify-content: space-between; margin-bottom: 28px;
+}
+.panel-head h3 { font-size: 1.25rem; font-weight: 700; }
+
+/* ── Delete Modal ── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.65);
+  z-index: 300; display: flex; align-items: center;
+  justify-content: center; backdrop-filter: blur(6px); padding: 20px;
+}
+.modal-box { width: 100%; max-width: 420px; padding: 36px 28px; animation: revealUp 0.3s ease forwards; }
+
+/* ── Responsive (Locator) ── */
+@media (max-width: 768px) {
+  .locator-hero-title { font-size: 2.2rem; }
+  .locator-stats-row { grid-template-columns: 1fr 1fr; }
+  .locator-panel { max-width: 100%; }
+}
+@media (max-width: 480px) {
+  .locator-hero-title { font-size: 1.8rem; }
+  .locator-stats-row { grid-template-columns: 1fr; }
+  .librarian-bar { flex-direction: column; align-items: flex-start; }
+  .locator-nav { display: none; }
+  .locator-search-input { padding-right: 16px; }
+  .locator-search-count { display: none; }
+}
+
