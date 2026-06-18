@@ -12,5 +12,5 @@
 // ── Change this ONE line when you deploy ──────────────────────────────────────
 const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   ? 'http://127.0.0.1:5000'          // local dev
-  : 'https://nexus-ai-backend.onrender.com';  // ← replace with your Render URL
+  : 'https://nexus-ai-backend-tbaw.onrender.com'; // deployed Render URL
 // ─────────────────────────────────────────────────────────────────────────────
