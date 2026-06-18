@@ -18,3 +18,15 @@ services:
         sync: false          # Set to your Netlify URL once deployed, e.g. https://nexus-ai.netlify.app
       - key: FLASK_ENV
         value: production
+<<<<<<< Updated upstream
+=======
+      - key: DB_PATH
+        value: backend/users.db
+    # Persistent disks are not supported on Render's Free tier.
+    # To enable persistence, upgrade to a Starter tier and uncomment the lines below:
+    # disk:
+    #   name: sqlite-data
+    #   mountPath: /var/data
+    #   sizeGB: 1
+
+>>>>>>> Stashed changes
