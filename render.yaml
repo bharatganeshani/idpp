@@ -1,6 +1,7 @@
 services:
   - type: web
     name: nexus-ai-backend
+    plan: free
     runtime: python
     rootDir: .
     buildCommand: pip install -r backend/requirements.txt
