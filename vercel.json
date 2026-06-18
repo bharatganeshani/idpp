@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "outputDirectory": "frontend",
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "https://nexus-ai-backend.onrender.com/$1" },
+    { "source": "/index",   "destination": "/index.html" },
+    { "source": "/locator", "destination": "/locator.html" },
+    { "source": "/login",   "destination": "/login.html" }
+  ],
+  "redirects": [
+    { "source": "/", "destination": "/login.html", "permanent": false }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options",        "value": "DENY" },
+        { "key": "Referrer-Policy",        "value": "strict-origin-when-cross-origin" }
+      ]
+    }
+  ]
+}

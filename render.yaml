@@ -18,6 +18,8 @@ services:
         sync: false          # Set to your Netlify URL once deployed, e.g. https://nexus-ai.netlify.app
       - key: FLASK_ENV
         value: production
+      - key: DB_PATH
+        value: /var/data/users.db
     disk:
       name: sqlite-data
       mountPath: /var/data
