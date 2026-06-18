@@ -1,12 +1,6 @@
 {
   "version": 2,
   "outputDirectory": "frontend",
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "https://nexus-ai-backend-tbaw.onrender.com/$1"
-    }
-  ],
   "redirects": [
     {
       "source": "/",
