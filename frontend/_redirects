@@ -1,0 +1,13 @@
+# Netlify redirects for a static multi-page HTML site.
+# All routes fall through to the actual HTML files.
+# The /* → /login.html rule ensures Netlify never returns a 404
+# when a user hard-refreshes on a page.
+
+/              /login.html    200
+/index         /index.html    200
+/locator       /locator.html  200
+
+# Proxy API calls to the Render backend so the frontend never
+# makes cross-origin requests in the browser.
+# Replace the URL below with your actual Render service URL.
+/api/*  https://nexus-ai-backend.onrender.com/:splat  200

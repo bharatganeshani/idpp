@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: nexus-ai-backend
+    runtime: python
+    rootDir: .
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: gunicorn backend.app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.0
+      - key: api_key
+        sync: false          # Set this manually in Render dashboard — never commit it
+      - key: api_endpoint
+        value: https://integrate.api.nvidia.com/v1/chat/completions
+      - key: model
+        value: moonshotai/kimi-k2.6
+      - key: FRONTEND_URL
+        sync: false          # Set to your Netlify URL once deployed, e.g. https://nexus-ai.netlify.app
+      - key: FLASK_ENV
+        value: production
+    disk:
+      name: sqlite-data
+      mountPath: /var/data
+      sizeGB: 1

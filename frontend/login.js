@@ -99,7 +99,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setLoading('loginBtn', 'loginLoader', true, 'Authenticate');
 
     try {
-      const res = await fetch("http://127.0.0.1:5000/login", {
+      const res = await fetch(`${BACKEND_URL}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password })
@@ -148,7 +148,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setLoading('registerBtn', 'registerLoader', true, 'Create Account');
 
     try {
-      const res = await fetch("http://127.0.0.1:5000/register", {
+      const res = await fetch(`${BACKEND_URL}/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password, role })
@@ -162,7 +162,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // Automatically log the user in after registration
       setTimeout(async () => {
         try {
-          const loginRes = await fetch("http://127.0.0.1:5000/login", {
+          const loginRes = await fetch(`${BACKEND_URL}/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ username, password })

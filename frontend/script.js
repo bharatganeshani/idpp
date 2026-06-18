@@ -319,7 +319,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ── API Calls ──
   async function classifyWithAI(title, content) {
-    const res = await fetch('http://127.0.0.1:5000/classify', {
+    const res = await fetch(`${BACKEND_URL}/classify`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title, content })
@@ -331,7 +331,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const formData = new FormData();
     formData.append('file', file);
     if (title) formData.append('title', title);
-    const res = await fetch('http://127.0.0.1:5000/upload-and-classify', {
+    const res = await fetch(`${BACKEND_URL}/upload-and-classify`, {
       method: 'POST',
       body: formData
     });
@@ -341,7 +341,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function uploadImageToAPI(file) {
     const formData = new FormData();
     formData.append('file', file);
-    const res = await fetch('http://127.0.0.1:5000/analyze-image', {
+    const res = await fetch(`${BACKEND_URL}/analyze-image`, {
       method: 'POST',
       body: formData
     });

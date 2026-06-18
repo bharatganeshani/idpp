@@ -1,5 +1,6 @@
 // ── Book Locator — locator.js ─────────────────────────────────────────────────
-const API = 'http://127.0.0.1:5000';
+// API base URL is defined in config.js (loaded before this script in locator.html)
+const API = typeof BACKEND_URL !== 'undefined' ? BACKEND_URL : 'http://127.0.0.1:5000';
 
 let allLocations = [];
 let currentUser  = null;
