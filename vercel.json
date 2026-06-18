@@ -4,25 +4,28 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://nexus-ai-backend.onrender.com/$1"
-    },
-    {
-      "source": "/index",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/locator",
-      "destination": "/locator.html"
-    },
-    {
-      "source": "/login",
-      "destination": "/login.html"
+      "destination": "https://nexus-ai-backend-tbaw.onrender.com/$1"
     }
   ],
   "redirects": [
     {
       "source": "/",
       "destination": "/login.html",
+      "permanent": false
+    },
+    {
+      "source": "/login",
+      "destination": "/login.html",
+      "permanent": false
+    },
+    {
+      "source": "/index",
+      "destination": "/index.html",
+      "permanent": false
+    },
+    {
+      "source": "/locator",
+      "destination": "/locator.html",
       "permanent": false
     }
   ],
@@ -44,12 +47,5 @@
         }
       ]
     }
-  ],
-  "experimentalServices": {
-    "web": {
-      "type": "web",
-      "entrypoint": "backend/app.py",
-      "routePrefix": "/"
-    }
-  }
+  ]
 }
